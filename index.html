@@ -11,6 +11,18 @@
     <!--Add buttons to initiate auth sequence and sign out-->
     <button id="authorize-button" style="display: none;">Authorize</button>
     <button id="signout-button" style="display: none;">Sign Out</button>
+    <br/>
+    <form id="choose-folder" style="display: none;">
+      <label> Cartella:
+        <input type="text" name="folder" required>
+      </label>
+      <br/>
+      <label> Proprietario:
+        <input type="email" name="owner" required>
+      </label>
+      <br/>
+      <input type="submit">
+    </form>
 
     <div id="content"></div>
 
@@ -28,6 +40,11 @@
 
       var authorizeButton = document.getElementById('authorize-button');
       var signoutButton = document.getElementById('signout-button');
+      var chooseFolder = document.getElementById('choose-folder');
+
+      // var authorizeButton = $('#authorize-button');
+      // var signoutButton = $('#signout-button');
+      // var chooseFolder = $('#choose-folder');
 
       /**
        *  On load, called to load the auth2 library and API client library.
@@ -54,6 +71,7 @@
           updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
           authorizeButton.onclick = handleAuthClick;
           signoutButton.onclick = handleSignoutClick;
+          chooseFolder.onsubmit = handleChooseFolder;
         });
       }
 
@@ -65,7 +83,8 @@
         if (isSignedIn) {
           authorizeButton.style.display = 'none';
           signoutButton.style.display = 'block';
-          listFiles();
+          chooseFolder.style.display = 'block';
+          // listFiles();
         } else {
           authorizeButton.style.display = 'block';
           signoutButton.style.display = 'none';
@@ -84,6 +103,18 @@
        */
       function handleSignoutClick(event) {
         gapi.auth2.getAuthInstance().signOut();
+      }
+
+      function handleChooseFolder(event) {
+          event.preventDefault();
+          var chooseFolderJQ = $("#choose-folder");
+          var folder = chooseFolderJQ.find("input[name=folder]");
+          var folderVal = folder.val();
+          var owner = chooseFolderJQ.find("input[name=owner]");
+          var ownerVal = owner.val();
+          console.log('folder: ' + folderVal, 'owner: ' + ownerVal);
+          appendPre('<h2>Files in: ' + folderVal + ' by ' + ownerVal + '</h2>');
+          listFiles(folderVal, ownerVal);
       }
 
       /**
@@ -106,33 +137,57 @@
       /**
        * Print files.
        */
-      function listFiles() {
+      function listFiles(folder, owner) {
         console.log("list files");
+
         gapi.client.drive.files.list({
-          'q': "'giovannificarra95@gmail.com' in owners and trashed = false and '1s_qOjiXvnhW2rrtFYoNTMFRob4BHImY9' in parents",
+          'q': "'" + owner + "' in owners and trashed = false and name contains '" + folder + "'",
           'pageSize': 1000,
-          'fields': "nextPageToken, files(id, name, mimeType, webViewLink, webContentLink, thumbnailLink)",
-          'orderBy': "name"
+          'fields': "nextPageToken, files(id)"
         }).then(function(response) {
-          console.log("elaborating response...");
-          appendPre('Files:');
-          var files = response.result.files;
-          if (files && files.length > 0) {
-            for (var i = 0; i < files.length; i++) {
-              var file = files[i];
-              console.log(file);
-              var content = file.name + ' (' + file.id + ')';
-              if (file.mimeType && file.mimeType.includes("image")) {
-                  console.log(file.mimeType);
-                  // content += "<img src='" + file.webViewLink + "'/><br/>";
-                  content += "<img src='" + file.webContentLink + "'/><br/>";
-                  // content += "<img src='" + file.thumbnailLink + "'/><br/>";
-              }
-              appendPre(content);
+            var files = response.result.files;
+            if (files.length > 1) {
+                console.log("ci sono più cartelle con questo nome");
+                console.log(files);
+            } else if (files.length === 0) {
+                console.log("non ci sono cartelle con questo nome");
+                appendPre('Folder not found.');
+                throw "Folder not found!";
+            } else {
+                var folderID = response.result.files[0].id;
+                console.log("folder id: ", folderID);
+
+                var q = "'" + owner + "' in owners and trashed = false and '" + folderID + "' in parents";
+                console.log(q);
+                gapi.client.drive.files.list({
+                  'q': q,
+                  //'q': "'giovannificarra95@gmail.com' in owners and trashed = false and '1s_qOjiXvnhW2rrtFYoNTMFRob4BHImY9' in parents",
+                  //'q': "'giovannificarra95@gmail.com' in owners and trashed = false and '" + folderID + "' in parents",
+                  'pageSize': 1000,
+                  'fields': "nextPageToken, files(id, name, mimeType, webViewLink, webContentLink, thumbnailLink)",
+                  'orderBy': "name"
+                }).then(function(response) {
+                  console.log("elaborating response...");
+                  appendPre('Files:');
+                  var files = response.result.files;
+                  if (files && files.length > 0) {
+                    for (var i = 0; i < files.length; i++) {
+                      var file = files[i];
+                      console.log(file);
+                      var content = file.name + ' (' + file.id + ')';
+                      if (file.mimeType && file.mimeType.includes("image")) {
+                          console.log(file.mimeType);
+                          // content += "<img src='" + file.webViewLink + "'/><br/>";
+                          content += "<img src='" + file.webContentLink + "'/><br/>";
+                          // content += "<img src='" + file.thumbnailLink + "'/><br/>";
+                      }
+                      appendPre(content);
+                    }
+                  } else {
+                    appendPre('No files found.');
+                  }
+                });
             }
-          } else {
-            appendPre('No files found.');
-          }
         });
       }
 
@@ -142,5 +197,6 @@
       onload="this.onload=function(){};handleClientLoad()"
       onreadystatechange="if (this.readyState === 'complete') this.onload()">
     </script>
+
   </body>
 </html>
