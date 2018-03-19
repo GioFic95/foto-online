@@ -75,6 +75,12 @@
                           var imgLink = file.webContentLink.substring(0, file.webContentLink.indexOf("&export"));
                           content += "<br/><img src='" + imgLink + "'/><br/>";
                           // content += "<img src='" + file.thumbnailLink + "'/><br/>";
+                      } else if (file.mimeType && file.mimeType.includes("video")) {
+                          console.log(file.mimeType);
+                          // content += "<video> <source src='" + file.webViewLink + "'/> </video> <br/>";
+                          var imgLink = file.webContentLink.substring(0, file.webContentLink.indexOf("&export"));
+                          content += "<br/> <video controls> <source src='" + imgLink + "'/> </video> <br/>";
+                          // content += "<video> <source src='" + file.thumbnailLink + "'/> </video> <br/>";
                       }
                       appendPre(content);
                     }
