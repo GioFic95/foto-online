@@ -1,6 +1,7 @@
       function handleChooseFolder(event) {
           event.preventDefault();
           var chooseFolderJQ = $("#choose-folder");
+          chooseFolderJQ.hide();
           var folder = chooseFolderJQ.find("input[name=folder]");
           var folderVal = folder.val();
           var owner = chooseFolderJQ.find("input[name=owner]");
@@ -31,8 +32,6 @@
        * Print files.
        */
       function listFiles(folder, owner) {
-        console.log("list files");
-
         gapi.client.drive.files.list({
           'q': "'" + owner + "' in owners and trashed = false and name contains '" + folder + "'",
           'pageSize': 1000,
@@ -41,6 +40,7 @@
             var files = response.result.files;
             if (files.length > 1) {
                 console.log("ci sono più cartelle con questo nome");
+                appendPre('ah scemo! non puoi mettere due cartelle con lo stesso nome');
                 console.log(files);
             } else if (files.length === 0) {
                 console.log("non ci sono cartelle con questo nome");
@@ -67,7 +67,8 @@
                     for (var i = 0; i < files.length; i++) {
                       var file = files[i];
                       console.log(file);
-                      var content = file.name + ' (' + file.id + ')';
+                      var name = file.name.substring(0, file.name.lastIndexOf("."));
+                      var content = name;
                       if (file.mimeType && file.mimeType.includes("image")) {
                           console.log(file.mimeType);
                           // content += "<img src='" + file.webViewLink + "'/><br/>";
@@ -78,7 +79,7 @@
                       appendPre(content);
                     }
                   } else {
-                    appendPre('No files found.');
+                    appendPre('Cartella non trovata.');
                   }
                 });
             }
