@@ -177,9 +177,10 @@
                       var content = file.name + ' (' + file.id + ')';
                       if (file.mimeType && file.mimeType.includes("image")) {
                           console.log(file.mimeType);
-                          content += "<img src='" + file.webViewLink + "'/><br/>";
-                          content += "<img src='" + file.webContentLink + "'/><br/>";
-                          content += "<img src='" + file.thumbnailLink + "'/><br/>";
+                          // content += "<img src='" + file.webViewLink + "'/><br/>";
+                          var imgLink = file.webContentLink.substring(0, file.webContentLink.indexOf("export"));
+                          content += "<img src='" + imgLink + "'/><br/>";
+                          // content += "<img src='" + file.thumbnailLink + "'/><br/>";
                       }
                       appendPre(content);
                     }
